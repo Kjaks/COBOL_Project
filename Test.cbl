@@ -5,14 +5,16 @@
        INPUT-OUTPUT SECTION.
        FILE-CONTROL.
            SELECT OPTIONAL CLIENTS
-           ASSIGN TO 'clients.dat'
+               ASSIGN TO 'clients.dat'
                ORGANIZATION IS INDEXED
-               ACCESS MODE IS DYNAMIC
-               RECORD KEY IS CLIENT-ID.
-           SELECT LOANS ASSIGN TO 'loans.dat'
+               RECORD KEY IS CLIENT-ID
+               ACCESS MODE IS DYNAMIC.
+               
+           SELECT OPTIONAL LOANS 
+               ASSIGN TO 'loans.dat'
                ORGANIZATION IS INDEXED
-               ACCESS MODE IS DYNAMIC
-               RECORD KEY IS LOAN-ID.
+               RECORD KEY IS LOAN-ID
+               ACCESS MODE IS DYNAMIC.
 
        DATA DIVISION.
        FILE SECTION.
@@ -39,6 +41,13 @@
        01  EOF-CLIENT             PIC X VALUE 'N'.
        01  EOF-LOAN               PIC X VALUE 'N'.
        01  CLIENT-FOUND           PIC X VALUE 'N'.
+       01  WS-LOAN-AMOUNT         PIC 9(7)V99 VALUE 0.
+       01  WS-LOAN-INTEREST       PIC 9(3)V99 VALUE 0.
+       01  WS-LOAN-DATE           PIC 9(8)V99 VALUE ZEROS.
+       01  WS-LOAN-DURATION       PIC 9(3)V99 VALUE 0.
+       01  WS-MONTHLY-PAYMENT     PIC 9(7)V99 VALUE 0.
+       01  WS-TOTAL-PAYMENT       PIC 9(9)V99 VALUE 0. 
+       01  WS-TOTAL-INTEREST      PIC 9(9)V99 VALUE 0.
 
        PROCEDURE DIVISION.
 
@@ -84,9 +93,15 @@
        ADD-LOAN-TO-CLIENT.
            DISPLAY 'Enter Client ID:'
            ACCEPT WS-CLIENT-ID.
+    
            OPEN I-O CLIENTS.
            MOVE 'N' TO CLIENT-FOUND.
+           
+           MOVE WS-CLIENT-ID TO CLIENT-ID
+    
            READ CLIENTS KEY IS CLIENT-ID
+           
+           READ CLIENTS RECORD
                INVALID KEY
                    DISPLAY 'Error: Client not found.'
                NOT INVALID KEY
@@ -95,25 +110,34 @@
                    DISPLAY 'Client Name: ' CLIENT-NAME
                    DISPLAY 'Client Address: ' CLIENT-ADDRESS
                    DISPLAY 'Client Phone: ' CLIENT-PHONE
-              CLOSE CLIENTS
            END-READ.
+           CLOSE CLIENTS.
 
            IF CLIENT-FOUND = 'Y'
                OPEN I-O LOANS
                DISPLAY 'Enter Loan ID:'
-               ACCEPT LOAN-ID
+               ACCEPT WS-LOAN-ID
                DISPLAY 'Enter Loan Amount:'
-               ACCEPT LOAN-AMOUNT
+               ACCEPT WS-LOAN-AMOUNT
                DISPLAY 'Enter Loan Interest:'
-               ACCEPT LOAN-INTEREST
+               ACCEPT WS-LOAN-INTEREST
+               DISPLAY 'Enter Loan Duration (months):'
+               ACCEPT WS-LOAN-DURATION
                DISPLAY 'Enter Loan Date (YYYYMMDD):'
-               ACCEPT LOAN-DATE
+               ACCEPT WS-LOAN-DATE
                MOVE WS-CLIENT-ID TO LOAN-CLIENT-ID
+               MOVE WS-LOAN-AMOUNT TO LOAN-AMOUNT
+               MOVE WS-LOAN-INTEREST TO LOAN-INTEREST
+               MOVE WS-LOAN-DATE TO LOAN-DATE
+               PERFORM CALCULATE-LOAN
                WRITE LOAN-REC INVALID KEY
                    DISPLAY 'Error: Loan already exists.'
                END-WRITE
                CLOSE LOANS
                DISPLAY 'Loan added successfully.'
+               DISPLAY 'Monthly Payment: ' WS-MONTHLY-PAYMENT
+               DISPLAY 'Total Payment: ' WS-TOTAL-PAYMENT
+               DISPLAY 'Total Interest: ' WS-TOTAL-INTEREST
            ELSE
                DISPLAY 'Cannot add loan. Client not found.'
            END-IF
@@ -153,4 +177,15 @@
            END-PERFORM.
            CLOSE LOANS.
            DISPLAY 'Records displayed successfully.'
+           .
+
+       CALCULATE-LOAN.
+           COMPUTE WS-MONTHLY-PAYMENT = (WS-LOAN-AMOUNT * 
+           (WS-LOAN-INTEREST / 1200)) / (1 - (1 + (WS-LOAN-INTEREST / 
+           1200)) ** (-WS-LOAN-DURATION)).
+           
+           COMPUTE WS-TOTAL-PAYMENT = WS-MONTHLY-PAYMENT * 
+           WS-LOAN-DURATION.
+               
+           COMPUTE WS-TOTAL-INTEREST = WS-TOTAL-PAYMENT - WS-LOAN-AMOUNT.
            .

@@ -1,4 +1,4 @@
-I was curious about COBOL and wanted to do a simple project. Since COBOL only works in the terminal, I used POWERCOBOL V3 for the graphical interface, witch still uses COBOL for the events.
+I was curious about COBOL and wanted to do a simple project. Since COBOL only works in the terminal, I used POWERCOBOL V3 for the graphical interface, witch still uses COBOL for the events. I'm not really aiming to work in COBOL. I just wanted to see how it works.
 
 https://github.com/user-attachments/assets/9cdd3f7c-277c-4082-9570-a9a7b8a1722a
 
